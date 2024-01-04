@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.spring.admin.model.dao.AdminDAO">
+
+	<select id="newestBoardList" resultType="map">
+      <![CDATA[
+      select board_id, board_title, nickname, board_create_date, board_count, board_type
+      from (select *
+           from board join member on(board_writer = id)
+           where board_status = 'Y' and board_type = 1
+           order by board_create_date desc)
+      where rownum <=5
+      union
+      select board_id, board_title, nickname, board_create_date, board_count, board_type
+      from (select *
+           from board join member on(board_writer = id)
+           where board_status = 'Y' and board_type = 2
+           order by board_create_date desc)
+      where rownum <= 5
+      ]]>
+   </select>
+   
+   <select id="selectMembers" resultType="Member">
+      select * from member
+   </select>
+		
+	<update id="updateInfo">
+		UPDATE MEMBER SET
+		${column} = #{data}
+		WHERE ID = #{id}
+	</update>
+	
+	<select id="getListCount" resultType="int">
+		SELECT COUNT(*)
+		FROM BOARD
+		WHERE BOARD_TYPE = #{i}
+	</select>
+	
+	<select id="selectBoardList" resultType="Board">
+		SELECT *
+		FROM BOARD
+		JOIN MEMBER ON(BOARD_WRITER = ID)
+		WHERE BOARD_TYPE = #{i}
+		ORDER BY BOARD_ID DESC
+	</select>
+	
+	<update id="updateBoardStatus">
+		UPDATE BOARD
+		SET BOARD_STATUS = #{value}
+		WHERE BOARD_ID = #{bId}
+	</update>
+	
+	<select id="selectAttmList">
+		SELECT *
+		FROM ATTACHMENT
+		ORDER BY REF_BOARD_ID, attm_level, attm_id
+	</select>
+	
+	<update id="updateAttmStatus">
+		update attachment
+		set attm_status = #{value}
+		where ref_board_id = #{bId}
+	</update>
+</mapper>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<style>
+	span{font-size: 12px;}
+	.table td{cursor: pointer;}
+	.table td>div{border: 1px solid black; height: 80%; width: 45%; display: inline-block; padding-top: 3%; cursor: pointer;}
+	.selectState{background: lightgray;}
+	.unselectState{background: none;}
+	.vibration{
+		animation: vibration 0.1s infinite;
+	}
+	@keyframes vibration{
+		from{
+			transform: rotate(1deg);
+		}
+		to{
+			transform : rotate(-1deg);
+		}
+	}
+</style>
+<script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+</head>
+<body>
+	<div th:replace="~{common/navbar :: navbar}"></div>
+	<div th:replace="~{common/adminSymbol :: symbol}"></div>
+
+	<div class="container-fluid">
+		<div class="row">
+			<div th:replace="~{common/adminbar :: sidebar}"></div>
+
+			<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+				<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+					<h1 class="h2">Members</h1>
+					<div>
+						<span>* 더블클릭을 하면 수정 칸으로 바뀝니다</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+						<span>* 수정 후 엔터를 누르면 수정이 완료됩니다</span>
+					</div>
+				</div>
+				
+				<div class="bd-example">
+					<table class="table table-hover" style="text-align: center;">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>NAME</th>
+								<th>NICKNAME</th>
+								<th>EMAIL</th>
+								<th>GENDER</th>
+								<th>AGE</th>
+								<th>PHONE</th>
+								<th>ADDRESS</th>
+								<th>ENROLL</th>
+								<th>ADMIN</th>
+								<th>STATUS</th>
+							</tr>
+						</thead>
+						<tbody th:each="l : ${list}">
+							<tr>
+								<td>[[${l.id}]]</td>
+								<td>[[${l.name}]]</td>
+								<td>[[${l.nickName}]]</td>
+								<td>[[${l.email}]]</td>
+								<td>[[${l.gender}]]</td>
+								<td>[[${l.age == null ? '-' : l.age}]]</td>
+								<td>[[${l.phone}]]</td>
+								<td>[[${l.address}]]</td>
+								<td>[[${l.enrollDate}]]</td>
+								<td>
+									<div th:class="${l.isAdmin == 'Y' ? 'selectState' : 'unselectState'}">Y</div>
+									<div th:class="${l.isAdmin == 'N' ? 'selectState' : 'unselectState'}">N</div>
+								</td>
+								<td>
+									<div th:class="${l.memberStatus == 'Y' ? 'selectState' : 'unselectState'}">Y</div>
+									<div th:class="${l.memberStatus == 'N' ? 'selectState' : 'unselectState'}">N</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</main>
+		</div>
+	</div>
+	
+	<script>
+		window.onload = () =>{
+			const tds = document.getElementsByTagName("td");
+			let beforeData = null;
+			
+			document.querySelector("body").addEventListener("click",()=>{
+				for(let i = 0; i<tds.length; i++){
+					if(tds[i].children[0] != undefined && tds[i].children[0].value != undefined){
+						if(event.target.value == undefined){
+							tds[i].innerHTML = "<td>" + beforeData + "</td>";
+						}
+					}
+				}
+			})
+			
+			
+			for(let i=0; i<tds.length; i++){
+				const index = i % 11;
+				tds[i].addEventListener("dblclick", function(){
+					for(let j = 0; j<tds.length; j++){
+		                  if(tds[j].children[0] != undefined && tds[j].children[0].value != undefined){
+		                     tds[j].innerHTML ='<td>' + tds[j].children[0].value + '</td>';
+		                  }
+		               }
+					
+					if(index != 0 && index != 8 && index != 9 && index != 10){
+						beforeData = this.innerText;
+						if(index == 3){ //이메일
+							const domain = this.innerText.split("@")[1];
+							let selected = "<select class='updateData'>\
+												<option>naver.com</option>\
+												<option>gamil.com</option>\
+												<option>nate.com</option>\
+												<option>hanmail.net</option>\
+											</selected>";
+							if(domain == "gmail.com"){
+								selected = "<select class='updateData'>\
+									<option>naver.com</option>\
+									<option selected>gamil.com</option>\
+									<option>nate.com</option>\
+									<option>hanmail.net</option>\
+								</selected>";
+							}else if(domain == "nate.com"){
+								selected = "<select class='updateData'>\
+									<option>naver.com</option>\
+									<option>gamil.com</option>\
+									<option selected>nate.com</option>\
+									<option>hanmail.net</option>\
+								</selected>";
+							}else if(domain == "hanmail.net"){
+								selected = "<select class='updateData'>\
+									<option>naver.com</option>\
+									<option>gamil.com</option>\
+									<option>nate.com</option>\
+									<option selected>hanmail.net</option>\
+								</selected>";
+							}
+							this.innerHTML = '<input type="text" class="updateData" value="'+ this.innerText.split("@")[0] + '" size="5">@' + selected;
+						}else if(index == 4){ //성별
+							let checked = null;
+							if(beforeData == "M"){
+								checked = "<input type='radio' name='gender' value='M' class='updateData' checked> M\
+										   <input type='radio' name='gender' value='F' class='updateData'> F";
+							}else{
+								checked = "<input type='radio' name='gender' value='M' class='updateData'> M\
+									   	   <input type='radio' name='gender' value='F' class='updateData' checked> F";
+							}
+							this.innerHTML = checked;
+						}else if(index == 5){
+							let number = null;
+							number = "<input type='number' value='"+beforeData+"' size='5' min='0' max='100' class='updateData'>";
+							this.innerHTML = number;
+						}else{
+							let text = null;
+							text = "<input type='text' value='"+beforeData+"' size='12' class='updateData'>";
+							this.innerHTML = text;
+						}
+						const updateDatas = document.getElementsByClassName("updateData");
+						for(const update of updateDatas){
+							update.addEventListener("keyup", function(event){
+								if(event.key == "Enter"){
+									
+									let datas = "";
+									if(updateDatas[0].type == 'radio'){
+										for(let i=0; i<updateDatas.length; i++){
+											if(updataDatas[i].checked){
+												datas = updateDatas[i].value;
+												break;
+											}
+										}
+									}else{
+										for(let i=0; i<updateDatas.length; i++){
+											if(i == 0){
+												datas = updateDatas[i].value;
+											}else{
+												datas += "@" + updateDatas[i].value;
+											}
+										}
+									}
+									
+									if(index == 2){
+										$.ajax({
+											url:'checkNickName.me',
+											data: {nickName:datas},
+											success: data =>{
+												console.log(data)
+												if(data == 'yes'){
+													$.ajax({
+														url: "updateInfo.adm",
+														data: {column:document.querySelectorAll("th")[index].innerText, data:datas, id:this.parentElement.parentElement.children[0].innerText},
+														success: data =>{
+															console.log(data);
+															if(data == 'success'){
+																tds[i].innerHTML = '<td>'+datas+"</td>";
+															}else{
+																alert("수정이 실패하여 페이지가 새로고침 됩니다.")
+																location.reload();
+															}
+														},
+														error: data => console.log(data)
+													})
+												}else{
+													this.classList.add('vibration');
+													setTimeout(()=>{
+														this.classList.remove("vibration");
+													}, 400);
+												}
+											},
+											error: data => console.log(data)
+										})
+									}else{
+										$.ajax({
+											url: "updateInfo.adm",
+											data: {column:document.querySelectorAll("th")[index].innerText, data:datas, id:this.parentElement.parentElement.children[0].innerText},
+											success: data =>{
+												console.log(data);
+												if(data == 'success'){
+													tds[i].innerHTML = '<td>'+datas+"</td>";
+												}else{
+													alert("수정이 실패하여 페이지가 새로고침 됩니다.")
+													location.reload();
+												}
+											},
+											error: data => console.log(data)
+										})
+									}
+								}
+							});
+						}
+					}else{
+						alert("수정할 수 없는 항목입니다");
+					}
+				});
+				
+				const stateButtons = tds[i].querySelectorAll("div");
+				for(const button of stateButtons){
+					button.addEventListener("click",function(){
+						if(this.className == 'unselectState'){
+							$.ajax({
+								url:'updateInfo.adm',
+								data:{column:document.querySelectorAll("th")[index].innerText, data:this.innerText, id:this.parentElement.parentElement.children[0].innerText},
+								success:data=>{
+									if(data == 'success'){
+										this.className = "selectState";
+										for(const sibllings of this.parentElement.children){
+											if(sibllings != this){
+												sibllings.className = "unselectState";
+											}
+										}
+									}else{
+										alert("상태 변경에 실패하여 페이지가 새로고침 됩니다.");
+										location.reload();
+									}
+								},
+								error: data => console.log(data)
+							})
+						}
+					})
+				}
+			}
+		}
+	</script>
+</body>
+</html>

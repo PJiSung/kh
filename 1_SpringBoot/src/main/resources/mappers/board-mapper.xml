@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.spring.board.model.dao.BoardDAO">
+	<select id="getListCount" resultType="_int">
+		select count(*)
+		from board
+		where board_status = 'Y' and board_type=#{i} 
+	</select>
+	
+	<select id="selectBoardList">
+		select *
+		from board
+			 join member on(board_writer = id)
+		where board_status = 'Y' and board_type=#{1}
+		order by board_id desc
+	</select>
+	
+	<insert id="insertBoard" useGeneratedKeys="true">
+		<selectKey order="BEFORE" resultType="_int" keyProperty="boardId">
+			select seq_bid.nextval from dual<!-- 시컨스 증가 -->
+		</selectKey>
+		
+		insert into board
+		values(#{boardId},#{boardTitle},#{boardWriter},#{boardContent}, default, sysdate, sysdate, default, #{boardType})
+	</insert>
+	
+	<select id="selectBoard" resultType="Board">
+		select *
+		from board
+			 join member on(board_writer = id)
+		where board_Id=#{boardId} and board_status = 'Y'
+	</select>
+	
+	<select id="selectReply" resultType="Reply">
+		select *
+		from reply
+			 join member on(reply_writer = id)
+		where ref_board_id = #{boardId} and reply_status = 'Y'
+		order by reply_id desc
+	</select>
+	
+	<update id="updateCount">
+		update board
+		set board_count = board_count + 1
+		where board_id = #{boardId}
+	</update>
+	
+	<insert id="insertReply">
+		insert into reply
+		values(seq_rid.nextval, #{replyContent}, #{refBoardId}, #{replyWriter}, sysdate, sysdate, default)
+	</insert>
+	
+	<update id="updateBoard">
+		update board
+		set board_Title=#{boardTitle}, board_content = #{boardContent}, board_modify_date=sysdate, board_type=#{boardType}
+		where board_id = #{boardId}
+	</update>
+	
+	<update id="deleteBoard">
+		update board
+		set board_status = 'N'
+		where board_id = #{boardId}
+	</update>
+	
+	<select id="selectAttmBoardList" resultType="Attachment">
+		select *
+		from attachment
+		where attm_status='Y'
+		<if test="boardId == null">
+			and attm_level = 0
+		</if>
+		<if test = "boardId != null">
+			and ref_board_id = #{boardId}
+		</if>
+		order by attm_id
+	</select>
+	
+	<insert id="insertAttm">
+		insert all
+		<foreach collection="list" item="item">	<!-- 리스트 안에 담긴거를 item으로 하나하나 뽑아서 사용! -->
+			into attachment
+			values(new_aid, #{item.refBoardId}, #{item.originalName}, #{item.renameName}, #{item.attmPath}, #{item.attmLevel},default)
+		</foreach>
+		select * from dual
+	</insert>
+	
+	<update id="deleteAttm">
+		delete from attachment
+		where rename_name in
+		<foreach collection="list" item="item" open="(" close=")" separator=",">
+			#{item}			
+		</foreach>
+	</update>
+	
+	<update id="updateAttmLevel">
+		UPDATE ATTACHMENT
+      	SET ATTM_LEVEL = 0
+      	WHERE ATTM_ID = (SELECT MIN(ATTM_ID)
+        				 FROM ATTACHMENT
+                   		 WHERE REF_BOARD_ID = #{boardId})
+	</update>
+	
+	<update id="statusNAttm">
+		update attachment
+		set attm_status = 'N'
+		where ref_board_id = #{boardId}
+	</update>
+</mapper>

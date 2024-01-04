@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<style>
+	span{font-size: 12px;}
+	.table td{cursor: pointer;}
+	.table td>div{border: 1px solid black; height: 80%; width: 45%; display: inline-block; padding-top: 3%; cursor: pointer;}
+	.selectState{background: lightgray;}
+</style>
+<script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+</head>
+<body>
+	<div th:replace="~{common/navbar :: navbar}"></div>
+	<div th:replace="~{common/adminSymbol :: symbol}"></div>
+
+	<div class="container-fluid">
+		<div class="row">
+			<div th:replace="~{common/adminbar :: sidebar}"></div>
+
+			<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+				<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+					<h1 class="h2">Boards</h1>
+				</div>
+				
+				<div class="bd-example">
+					<table class="table table-hover" style="text-align: center;">
+						<thead>
+							<tr>
+								<th>NO.</th>
+								<th>TITLE</th>
+								<th>WRITER</th>
+								<th>CREATE</th>
+								<th>MODIFY</th>
+								<th>VIEWS</th>
+								<th>STATUS</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="l:${list}">
+								<td>[[${l.boardId}]]</td>
+								<td>[[${l.boardTitle}]]</td>
+								<td>[[${l.boardWriter}]]</td>
+								<td>[[${l.boardCreateDate}]]</td>
+								<td>[[${l.boardModifyDate}]]</td>
+								<td>[[${l.boardContent}]]</td>
+								<td>
+									<div th:class="${l.boardStatus == 'Y' ? 'selectState' : ''}">Y</div>
+									<div th:class="${l.boardStatus == 'N' ? 'selectState' : ''}">N</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+		       	
+				<nav aria-label="Standard pagination example" style="float: right;" th:with="loc=${loc}">
+					<ul class="pagination">
+						<li class="page-item">
+							<a class="page-link" th:href="@{${loc}(page=${pi.currentPage-1})}" aria-label="Previous">
+								<span aria-hidden="true">&laquo;</span>
+							</a>
+						</li>
+						<li class="page-item" th:each="p : ${#numbers.sequence(pi.startPage, pi.endPage)}">
+							<a class="page-link" th:href="@{${loc}(page=${p})}" th:text="${p}"></a>
+						</li>
+						<li class="page-item">
+							<a class="page-link" th:href="@{${loc}(page=${pi.currentPage+1})}" aria-label="Next">
+								<span aria-hidden="true">&raquo;</span>
+							</a>
+						</li>
+					</ul>
+				</nav>
+			</main>
+		</div>
+	</div>
+	
+	<div class="modal fade" id="exampleModalCenteredScrollable" tabindex="-1" aria-labelledby="exampleModalCenteredScrollableTitle" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="exampleModalCenteredScrollableTitle"></h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body"></div>
+				<div class="modal-body" style="text-align: right; font-size: 14px;"></div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" data-bs-dismiss="modal">게시글 올리기</button>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<script th:inline="javascript">
+		window.onload = () =>{
+			const tbody = document.querySelector("tbody");
+			const tds = tbody.querySelectorAll("td");
+			/*<![CDATA[*/
+			const list = /*[[${list}]]*/1;
+			/*]]>*/
+			
+			let boardId = null;
+			let divs = null;
+			let status = null;
+			const statusBtn = document.querySelector(".modal-footer").querySelector("button");
+			
+			
+			for(const td of tds){
+				if(td.children.length == 0){
+					td.setAttribute("data-bs-toggle", "modal");
+					td.setAttribute("data-bs-target", "#exampleModalCenteredScrollable")
+				}
+				td.addEventListener("click", function(){
+					const trTds = this.parentElement.querySelectorAll("td");
+					boardId = trTds[0].innerText;
+					divs = trTds[6].children;
+					
+					for(const b of list){
+						if(b.boardId == boardId){
+							document.getElementById("exampleModalCenteredScrollableTitle").innerText = b.boardTitle;
+							const modalBody = document.querySelectorAll(".modal-body");
+							modalBody[0].innerText = b.boardContent;
+							modalBody[1].innerText = "작성자 : " + b.nickName;
+							
+							if(divs[0].className == 'selectState'){
+								statusBtn.innerText = "게시글 내리기";
+								statusBtn.className = 'btn btn-dark';
+								status = 'N';
+							}else{
+								statusBtn.innerText = "게시글 올리기";
+								statusBtn.className = 'btn btn-primary';
+								status = 'Y';
+							}
+							break;
+						}
+					}
+				});
+			}
+			
+			statusBtn.addEventListener("click", function(){
+				$.ajax({
+					url : "updateBoardStatus.adm",
+					data : {bId:boardId, value:status},
+					success: data =>{
+						console.log(data);
+						if(data == "success"){
+							for(const div of divs){
+								div.classList.toggle("selectState");
+							}
+						}
+					},
+					error: data => console.log(data)
+				})
+			});
+			
+			const stateButtons = tbody.querySelectorAll("div");
+			for(const button of stateButtons){
+				button.addEventListener("click", function(){
+					if(this.className == ""){
+						$.ajax({
+							url : "updateBoardStatus.adm",
+							data : {bId:this.parentElement.parentElement.children[0].innerText, value:this.innerText},
+							success: data =>{
+								if(data == "success"){
+									this.className = 'selectState';
+									for(const siblings of this.parentElement.children){
+										if(siblings != this){
+											siblings.classList.remove("selectState");
+										}
+									}
+								}
+							},
+							error: data => console.log(data)
+						})				
+					}
+				});
+			}
+		}
+	</script>
+</body>
+</html>
